@@ -4,49 +4,89 @@ import java.util.*
 
 //val test = true
 val test = false
+fun test(){
+    println("word")
+    Parser("word")
+    println()
+    println("long")
+    Parser("long")
+    println()
+    println("int")
+    Parser("int")
+    println()
+    println("line")
+    Parser("line")
+}
 
 fun main(args: Array<String>) {
-    val arg2 = if (args.size == 2) {
-         args[1]
-//    } else "long"
-//    } else "line"
-    } else "word"
-
-    Parser(arg2)
+    if (test) test()
+    else {
+        var strategy = args.joinToString(" ").split(" ").last()
+        args.forEach {
+            if (it.contains("-sortIntegers")) strategy =  "int"
+        }
+        Parser(strategy)
+    }
 }
 
 class Parser {
-    val arr: Array<Any>
-    var _X: String = ""
+    val strategy: Int
+    val lineStrategy = 1
+    val wordStrategy = 2
+    val longStrategy = 3
+    val intStragegy = 4
+    val preparedString1: String
+    val preparedString2: String
+
+    val _X_size: Int
     var _Y: String = ""
     var _Z: String = ""
     var _P: Int = 0
-    val data: Array<String>
+
+    var data: Array<String> = emptyArray<String>()
     var elements: Array<String> = emptyArray<String>()
     var sortedElements: Array<String> = emptyArray<String>()
 
-    constructor(arg2: String) {
-        arr = when (arg2) {
-            "long" -> arrayOf(1, "numbers", "greatest number: ")
-            "line" -> arrayOf(2, "lines", "longest line: \n")
-            else -> arrayOf(3, "words", "longest word: ")
+    constructor(_strategy: String) {
+        when (_strategy) {
+            "line" -> {
+                strategy = lineStrategy
+                preparedString1 = "Total lines: "
+                preparedString2 = "The longest line: \n"
+            }
+            "long" -> {
+                strategy = longStrategy
+                preparedString1 = "Total numbers: "
+                preparedString2 = "The greatest number: "
+            }
+            "int" -> {
+                strategy = intStragegy
+                preparedString1 = "Total numbers: "
+                preparedString2 = "Sorted data: "
+            }
+            else -> {   // "word"
+                strategy = wordStrategy
+                preparedString1 = "Total words: "
+                preparedString2 = "The longest word: "
+            }
         }
-        data = readInput()
-        _X = countX()
-        _Y = findY()
-        _Z = countZ()
-        _P = 100 / elements.size
-        output(_X, _Y, _Z, _P)
+        readInput()
+        eliminateEmptyElements()
+        _X_size = elements.size
+        bubleSort()
+        _Y = greatestElement()
+        _Z = count_Y()
+        _P = 100 * _Z.toInt() / elements.size
+        output()
     }
 
-    fun readInput(): Array<String> {
+    fun readInput(){
         val space = " " // без пробелав в конце может последнее число или word не прочитать
-
         val inputString: String =
             if (test) {
-                "1 -2   333 4\n" +
-                "42\n" +
-                "1                 1" + space
+                "1 -2   33 4\n" +
+                        "42\n" +
+                        "1                 1" + space
             } else {
                 val scanner = Scanner(System.`in`)
                 var input: String = scanner.nextLine()
@@ -54,38 +94,38 @@ class Parser {
                 while (scanner.hasNext()) {
                     input += "\n" + scanner.nextLine()
                 }
-                if (arr[0] == 1 || arr[0] == 3) input += space
+                // для строк пробел в конце не нужен
+                if (strategy != lineStrategy) input += space
                 input
             }
-        return stringToStringArray(inputString)
+        stringToStringArray(inputString)
     }
 
-    private fun stringToStringArray(inputString: String): Array<String> {
-        var strings: Array<String> = emptyArray<String>()
+    private fun stringToStringArray(inputString: String){
         var num: String = ""
-
-        when (arr[0]) {
-            1 -> {
+        when (strategy) {
+            lineStrategy -> {
+                var str = inputString.split("\n")
+                for (i in 0 until str.size) {
+                    data += str[i]
+                }
+            }
+            longStrategy,
+            intStragegy -> {
                 for (i in 0 until inputString.length) {
                     if (inputString[i].isDigit() || inputString[i] == '-' || inputString[i] == '_') {
                         num += inputString[i]
                     } else {
-                        strings += num
+                        data += num
                         num = ""
                         continue
                     }
                 }
             }
-            2 -> {
-                var str = inputString.split("\n")
-                for (i in 0 until str.size) {
-                    strings += str[i]
-                }
-            }
-            else -> {
+            else -> {   // wordStrategy
                 for (i in 0 until inputString.length) {
                     if (inputString[i] == ' ' || inputString[i] == '\n') {
-                        strings += num
+                        data += num
                         num = ""
                         continue
                     } else {
@@ -94,40 +134,32 @@ class Parser {
                 }
             }
         }
-        return strings
     }
 
-    private fun countX(): String {
+    private fun eliminateEmptyElements() {
         for (i in 0 until data.size) {
-            when (arr[0]) {
-                1 -> if (data[i] != " " && data[i] != "") elements += data[i]
-                2 -> elements += data[i]
+            when (strategy) {
+                lineStrategy -> elements += data[i]
                 else -> if (data[i] != " " && data[i] != "") elements += data[i]
             }
         }
-        return elements.size.toString()
     }
 
-    private fun findY(): String {
-        bubleSort(elements)
-        return greatestElement()
-    }
+    // The merge sort algorithm (O(n log n) complexity) better than bubble sort, insertion sort, and selection sort.
+    // Merge sort can be used to sort even large arrays
 
-    // O(n2) complexity
-    fun bubleSort(elements: Array<String>) {
+    // bubble sort O(n2) complexity
+    private fun bubleSort() {
         sortedElements = elements
 
-        for (i in 0 until sortedElements.size) {
-            for (j in i + 1 until sortedElements.size) {
-                when (arr[0]) {
-                    1 -> if (sortedElements[i].toInt() > sortedElements[j].toInt()) swap(i, j, sortedElements)
-                    else -> {
-                        if (sortedElements[i].length > sortedElements[j].length) {
-                            swap(i, j, sortedElements)
-                        }
-                        if (sortedElements[i].length == sortedElements[j].length) {
-                            compareStrings(i, j, sortedElements, 0)
-                        }
+        for (i in 0 until _X_size) {
+            for (j in i + 1 until _X_size) {
+                when (strategy) {
+                    longStrategy, intStragegy ->
+                        if (sortedElements[i].toInt() > sortedElements[j].toInt()) swap(i, j, sortedElements)
+                    else -> {  // wordStrategy or lineStrategy
+                        if (sortedElements[i].length > sortedElements[j].length) swap(i, j, sortedElements)
+                        if (sortedElements[i].length == sortedElements[j].length) compareStrings(i, j, sortedElements, 0)
                     }
                 }
             }
@@ -141,29 +173,37 @@ class Parser {
             compareStrings(i, j, sortedElements, chr + 1)
     }
 
-    fun swap(a: Int, b: Int, array: Array<String>) {
+    private fun swap(a: Int, b: Int, array: Array<String>) {
         val temp = array[b]
         array[b] = array[a]
         array[a] = temp
     }
 
-    fun greatestElement(): String = when(arr[0]) {
-        1 -> sortedElements[sortedElements.size - 1]
-        2 -> sortedElements[sortedElements.size - 1]
-        else -> sortedElements[sortedElements.size - 1]
-    }
+    private fun greatestElement(): String = sortedElements[_X_size - 1]
 
-    private fun countZ(): String {
+    private fun count_Y(): String {
         var counter = 0
-        for (i in 0 until elements.size) {
+        for (i in 0 until _X_size) {
             if (elements[i] == _Y) counter++
         }
-        if (arr[0] == 2) _Y += "\n"
+        if (strategy == lineStrategy) _Y += "\n"
         return counter.toString()
     }
 
-    private fun output(_X: String, _Y: String, _Z: String, _P: Int) {
-        println("Total ${arr[1]}: $_X.\n" +
-                "The ${arr[2]}$_Y ($_Z time(s), $_P%).")
+    private fun output() {
+        println("${preparedString1}$_X_size.")
+        if (strategy == intStragegy)
+            println("${preparedString2}${printElements()}")
+        else // wordStrategy or lineStrategy or longStrategy
+            println("${preparedString2}$_Y ($_Z time(s), $_P%).")
+    }
+
+    private fun printElements(): String {
+        var out = sortedElements[0]
+        if (_X_size > 1)
+            for (i in 1 until _X_size) {
+                out += " " + sortedElements[i]
+            }
+        return out
     }
 }
