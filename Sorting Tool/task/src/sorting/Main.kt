@@ -4,87 +4,75 @@ import java.util.*
 
 //val test = true
 val test = false
-fun test(){
-    println("word")
-    Parser("word")
-    println()
-    println("long")
-    Parser("long")
-    println()
-    println("int")
-    Parser("int")
-    println()
-    println("line")
-    Parser("line")
-}
 
 fun main(args: Array<String>) {
     if (test) test()
     else {
-        var strategy = args.joinToString(" ").split(" ").last()
-        args.forEach {
-            if (it.contains("-sortIntegers")) strategy =  "int"
+        var dataType: String = "word"
+        var sortingType: String = "natural"
+        if (args.size > 0) {
+            for (i in 0..args.size - 1) {
+                if (    args[i].contains("-dataType") &&
+                        i != args.size - 1
+                        && args[i + 1] != "-sortingType")
+                            dataType = args[i+1]
+                if (args[i].contains("-sortingType") &&
+                        i != args.size - 1 &&
+                        args[i + 1] != "-dataType")
+                            sortingType = args[i+1]
+            }
         }
-        Parser(strategy)
+        Parser(dataType, sortingType)
     }
 }
 
 class Parser {
-    val strategy: Int
+    val type: Int
+    val sort: Boolean
     val lineStrategy = 1
     val wordStrategy = 2
     val longStrategy = 3
     val intStragegy = 4
     val preparedString1: String
-    val preparedString2: String
+    val preparedString2: String = "Sorted data: "
 
     val _X_size: Int
-    var _Y: String = ""
-    var _Z: String = ""
-    var _P: Int = 0
 
     var data: Array<String> = emptyArray<String>()
     var elements: Array<String> = emptyArray<String>()
     var sortedElements: Array<String> = emptyArray<String>()
 
-    constructor(_strategy: String) {
-        when (_strategy) {
+    constructor(dataType: String, sortingType: String) {
+        sort = if (sortingType == "byCount") false else true
+        when (dataType) {
             "line" -> {
-                strategy = lineStrategy
+                type = lineStrategy
                 preparedString1 = "Total lines: "
-                preparedString2 = "The longest line: \n"
             }
             "long" -> {
-                strategy = longStrategy
+                type = longStrategy
                 preparedString1 = "Total numbers: "
-                preparedString2 = "The greatest number: "
             }
             "int" -> {
-                strategy = intStragegy
+                type = intStragegy
                 preparedString1 = "Total numbers: "
-                preparedString2 = "Sorted data: "
             }
             else -> {   // "word"
-                strategy = wordStrategy
+                type = wordStrategy
                 preparedString1 = "Total words: "
-                preparedString2 = "The longest word: "
             }
         }
         readInput()
         eliminateEmptyElements()
         _X_size = elements.size
-        bubleSort()
-        _Y = greatestElement()
-        _Z = count_Y()
-        _P = 100 * _Z.toInt() / elements.size
+        bubleNaturalSort()
         output()
     }
 
     fun readInput(){
         val space = " " // без пробелав в конце может последнее число или word не прочитать
-        val inputString: String =
-            if (test) {
-                "1 -2   33 4\n" +
+        val inputString: String = if (test) {
+                        "1 -2   333 4\n" +
                         "42\n" +
                         "1                 1" + space
             } else {
@@ -94,8 +82,7 @@ class Parser {
                 while (scanner.hasNext()) {
                     input += "\n" + scanner.nextLine()
                 }
-                // для строк пробел в конце не нужен
-                if (strategy != lineStrategy) input += space
+                if (type != lineStrategy) input += space
                 input
             }
         stringToStringArray(inputString)
@@ -103,7 +90,7 @@ class Parser {
 
     private fun stringToStringArray(inputString: String){
         var num: String = ""
-        when (strategy) {
+        when (type) {
             lineStrategy -> {
                 var str = inputString.split("\n")
                 for (i in 0 until str.size) {
@@ -138,7 +125,7 @@ class Parser {
 
     private fun eliminateEmptyElements() {
         for (i in 0 until data.size) {
-            when (strategy) {
+            when (type) {
                 lineStrategy -> elements += data[i]
                 else -> if (data[i] != " " && data[i] != "") elements += data[i]
             }
@@ -149,29 +136,64 @@ class Parser {
     // Merge sort can be used to sort even large arrays
 
     // bubble sort O(n2) complexity
-    private fun bubleSort() {
+    private fun bubleNaturalSort() {
         sortedElements = elements
 
         for (i in 0 until _X_size) {
             for (j in i + 1 until _X_size) {
-                when (strategy) {
-                    longStrategy, intStragegy ->
+                when (type) {
+                    wordStrategy, lineStrategy -> {
+                        compareStringsNatural(i, j)
+                    }
+                    else -> {   // longStrategy, intStragegy
                         if (sortedElements[i].toInt() > sortedElements[j].toInt()) swap(i, j, sortedElements)
-                    else -> {  // wordStrategy or lineStrategy
-                        if (sortedElements[i].length > sortedElements[j].length) swap(i, j, sortedElements)
-                        if (sortedElements[i].length == sortedElements[j].length) compareStrings(i, j, sortedElements, 0)
                     }
                 }
             }
         }
     }
 
-    private fun compareStrings(i: Int, j: Int, sortedElements: Array<String>, chr: Int) {
-        if (sortedElements[i][chr] > sortedElements[j][chr])
+    private fun compareStringsNatural(i: Int, j: Int) {
+        var iLength = sortedElements[i].length
+        var jLength = sortedElements[j].length
+        var chrI = 0
+        var chrJ = 0
+
+        if (sortedElements[i].first() == '-') chrI++
+        if (sortedElements[j].first() == '-') chrJ++
+        if (chrI > chrJ) return
+        if (chrI < chrJ) {
             swap(i, j, sortedElements)
-        if (sortedElements[i][chr] == sortedElements[j][chr] && chr < sortedElements[i].length - 1)
-            compareStrings(i, j, sortedElements, chr + 1)
+            return
+        }
+
+        var descendSort = false
+        if (chrI == 1 && chrJ == 1) {
+            descendSort = true
+        }
+
+        var minLength = Math.min(iLength, jLength)
+        var ch = chrI
+        for (k in ch until minLength) {
+            if (sortedElements[i][k] == sortedElements[j][k]) continue
+            if (sortedElements[i][ch] < sortedElements[j][ch] && descendSort) {
+                swap(i, j, sortedElements)
+                return
+            }
+            if (sortedElements[i][k] < sortedElements[j][k]) return
+            if (sortedElements[i][k] > sortedElements[j][k] && !descendSort) {
+                swap(i, j, sortedElements)
+                return
+            }
+            if (sortedElements[i][k] > sortedElements[j][k]) return
+        }
+
+        // если в одной из строк частей больше и при этом
+        // все, кроме "лишних", совпадают с другой строкой, то эта строка "больше"
+        if (compare(sortedElements[i].length, sortedElements[j].length)) swap(i, j, sortedElements)
     }
+
+    fun compare(a: Int, b: Int): Boolean = if (a > b) true else false
 
     private fun swap(a: Int, b: Int, array: Array<String>) {
         val temp = array[b]
@@ -181,29 +203,134 @@ class Parser {
 
     private fun greatestElement(): String = sortedElements[_X_size - 1]
 
-    private fun count_Y(): String {
+    private fun count(string: String): String {
         var counter = 0
         for (i in 0 until _X_size) {
-            if (elements[i] == _Y) counter++
+            if (sortedElements[i] == string) counter++
         }
-        if (strategy == lineStrategy) _Y += "\n"
         return counter.toString()
     }
 
     private fun output() {
         println("${preparedString1}$_X_size.")
-        if (strategy == intStragegy)
-            println("${preparedString2}${printElements()}")
-        else // wordStrategy or lineStrategy or longStrategy
-            println("${preparedString2}$_Y ($_Z time(s), $_P%).")
+        if (sort) {
+            print(preparedString2)
+            println(printElements())
+        } else println(printStatistics())
     }
 
     private fun printElements(): String {
-        var out = sortedElements[0]
+        var out = ""
+        if (type == lineStrategy) out += "\n"
+        out += sortedElements[0]
         if (_X_size > 1)
             for (i in 1 until _X_size) {
-                out += " " + sortedElements[i]
+                out += when (type) {
+                    lineStrategy -> "\n" + sortedElements[i]
+                    else -> " " + sortedElements[i]
+                }
             }
         return out
     }
+
+    private fun printStatistics(): String {
+        val list: MutableList<List<String>> = mutableListOf<List<String>>()
+        var out = ""
+
+        var c = 0
+        var p = 0
+        for (i in 0 until _X_size) {
+            c = count(sortedElements[i]).toInt()
+            p = 100 * c / _X_size
+            list.add(listOf(p.toString(), c.toString(), sortedElements[i], "${sortedElements[i]}: $c time(s), $p%\n"))
+        }
+
+        val list2 = sortByCount(list)
+        for (i in 0 until list2.size) {
+            out += list2[i][3]
+        }
+
+        return out
+    }
+
+    private fun sortByCount(list: MutableList<List<String>>): MutableList<List<String>> {
+        var min = 0
+        val array2: MutableList<List<String>> = mutableListOf<List<String>>()
+        var size: Int = list.size
+        while (size != 0) {
+            for (i in 1 until size) {
+                if (list[i][0].toInt() < list[min][0].toInt()) {
+                    min = i
+                }
+            }
+            array2 += list[min]
+            list.removeAt(min)
+            min = 0
+            size--
+        }
+
+        size = array2.size
+        var a: String = ""
+        var c: Int = 0
+        while (size != 0) {
+            a = array2[0][2]
+            c = array2[0][1].toInt()
+            while (c != 1) {
+                if (array2[1][2] == a) {
+                    array2.removeAt(1)
+                    c--
+                    size--
+                }
+            }
+            list += array2[0]
+            array2.removeAt(0)
+
+            size--
+        }
+
+        return list
+    }
+
+    private fun swap2(a: Int, b: Int, array: MutableList<List<String>>) {
+        val temp = array[b]
+        array[b] = array[a]
+        array[a] = temp
+    }
+}
+
+fun test(){
+
+    println("long natural\n============")
+    Parser("long", "natural")
+    println("============\n")
+
+    println("int natural\n============")
+    Parser("int", "natural")
+    println("============\n")
+
+    println("word natural\n============")
+    Parser("word", "natural")
+    println("============\n")
+
+    println("line natural\n============")
+    Parser("line", "natural")
+    println("============\n")
+
+
+
+    println("long byCount\n============")
+    Parser("long", "byCount")
+    println("============\n")
+
+    println("int byCount\n============")
+    Parser("int", "byCount")
+    println("============\n")
+
+    println("word byCount\n============")
+    Parser("word", "byCount")
+    println("============\n")
+
+    println("line byCount\n============")
+    Parser("line", "byCount")
+    println("============\n")
 }
