@@ -6,14 +6,14 @@ import java.util.*
 //val test = true
 val test = false
 
-fun main(args: Array<String>) {
+fun main(args: Array<String>) { // работает => не трогай!!!
     if (test) test()
     else {
         var dataType: String = ""
         var sortingType: String = ""
         var inputFile: String = ""
         var outputFile: String = ""
-//        var arrgs = emptyArray<String>()
+
         var bool: Boolean = false
 
         val arguments = arrayOf("-dataType", "-sortingType", "line", "long", "int", "word", "natural", "byCount")
@@ -21,11 +21,9 @@ fun main(args: Array<String>) {
         if (args.size > 0) {
             for (i in 0..args.size - 1) {
                 if (args[i].contains("-dataType")) {
-//                    arrgs += args[i]
                     if (i != args.size - 1
                             && args[i + 1] != "-sortingType") {
                         dataType = args[i + 1]
-//                        arrgs += args[i + 1]
                         continue
                     } else if (dataType == "") {
                         println("No data type defined!")
@@ -35,11 +33,9 @@ fun main(args: Array<String>) {
                     }
                 }
                 if (args[i].contains("-sortingType")) {
-//                    arrgs += args[i]
                     if (i != args.size - 1 &&
                             args[i + 1] != "-dataType") {
                         sortingType = args[i + 1]
-//                        arrgs += args[i + 1]
                         continue
                     } else if (sortingType == "") {
                         println("No sorting type defined!")
@@ -61,12 +57,7 @@ fun main(args: Array<String>) {
                 if (!arguments.contains(args[i]) && !bool) println("\"${args[i]}\" is not a valid parameter. It will be skipped.")
                 bool = false
             }
-
-//            for (i in 0 until args.size) {
-//
-//            }
         }
-//        Parser(dataType, sortingType)
         Parser(dataType, sortingType, inputFile, outputFile)
     }
 }
@@ -89,8 +80,6 @@ class Parser {
 
     var inputFile: String = ""
     var outputFile: String = ""
-
-//    constructor(dataType: String, sortingType: String) {
 
     constructor(dataType: String, sortingType: String, _inputFile: String, _outputFile: String) {
         sort = if (sortingType == "byCount") false else true
@@ -127,8 +116,6 @@ class Parser {
             outputInFile(outputFile)
         } else output()
     }
-
-
 
     private fun readInputFile(inputFile: String) {
         val file = File(inputFile)
@@ -210,6 +197,7 @@ class Parser {
 
     // The merge sort algorithm (O(n log n) complexity) better than bubble sort, insertion sort, and selection sort.
     // Merge sort can be used to sort even large arrays
+    // TODO Merge sort
 
     // bubble sort O(n2) complexity
     private fun bubleNaturalSort() {
@@ -384,38 +372,38 @@ class Parser {
 }
 
 fun test(){
-/*
+
     println("long natural\n============")
-    Parser("long", "natural", inputFile, outputFile)
+    Parser("long", "natural", "", "")
     println("============\n")
 
     println("int natural\n============")
-    Parser("int", "natural", inputFile, outputFile)
+    Parser("int", "natural", "", "")
     println("============\n")
 
     println("word natural\n============")
-    Parser("word", "natural", inputFile, outputFile)
+    Parser("word", "natural", "", "")
     println("============\n")
 
     println("line natural\n============")
-    Parser("line", "natural", inputFile, outputFile)
+    Parser("line", "natural", "", "")
     println("============\n")
 
 
 
     println("long byCount\n============")
-    Parser("long", "byCount", inputFile, outputFile)
+    Parser("long", "byCount", "", "")
     println("============\n")
 
     println("int byCount\n============")
-    Parser("int", "byCount", inputFile, outputFile)
+    Parser("int", "byCount", "", "")
     println("============\n")
 
     println("word byCount\n============")
-    Parser("word", "byCount", inputFile, outputFile)
+    Parser("word", "byCount", "", "")
     println("============\n")
 
     println("line byCount\n============")
-    Parser("line", "byCount", inputFile, outputFile)
-    println("============\n")*/
+    Parser("line", "byCount", "", "")
+    println("============\n")
 }
