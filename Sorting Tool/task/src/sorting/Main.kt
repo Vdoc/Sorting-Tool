@@ -1,5 +1,6 @@
 package sorting
 
+import java.io.File
 import java.util.*
 
 //val test = true
@@ -8,21 +9,65 @@ val test = false
 fun main(args: Array<String>) {
     if (test) test()
     else {
-        var dataType: String = "word"
-        var sortingType: String = "natural"
+        var dataType: String = ""
+        var sortingType: String = ""
+        var inputFile: String = ""
+        var outputFile: String = ""
+//        var arrgs = emptyArray<String>()
+        var bool: Boolean = false
+
+        val arguments = arrayOf("-dataType", "-sortingType", "line", "long", "int", "word", "natural", "byCount")
+
         if (args.size > 0) {
             for (i in 0..args.size - 1) {
-                if (    args[i].contains("-dataType") &&
-                        i != args.size - 1
-                        && args[i + 1] != "-sortingType")
-                            dataType = args[i+1]
-                if (args[i].contains("-sortingType") &&
-                        i != args.size - 1 &&
-                        args[i + 1] != "-dataType")
-                            sortingType = args[i+1]
+                if (args[i].contains("-dataType")) {
+//                    arrgs += args[i]
+                    if (i != args.size - 1
+                            && args[i + 1] != "-sortingType") {
+                        dataType = args[i + 1]
+//                        arrgs += args[i + 1]
+                        continue
+                    } else if (dataType == "") {
+                        println("No data type defined!")
+                    dataType = "word"
+//                    throw Exception("No data type defined!")
+                        return
+                    }
+                }
+                if (args[i].contains("-sortingType")) {
+//                    arrgs += args[i]
+                    if (i != args.size - 1 &&
+                            args[i + 1] != "-dataType") {
+                        sortingType = args[i + 1]
+//                        arrgs += args[i + 1]
+                        continue
+                    } else if (sortingType == "") {
+                        println("No sorting type defined!")
+                    sortingType = "natural"
+//                    throw Exception("No sorting type defined!")
+                        return
+                    }
+                }
+                if (args[i].contains("-inputFile")) {
+                    inputFile = args[i + 1]
+                    bool = true
+                    continue
+                }
+                if (args[i].contains("-outputFile")) {
+                    outputFile = args[i + 1]
+                    bool = true
+                    continue
+                }
+                if (!arguments.contains(args[i]) && !bool) println("\"${args[i]}\" is not a valid parameter. It will be skipped.")
+                bool = false
             }
+
+//            for (i in 0 until args.size) {
+//
+//            }
         }
-        Parser(dataType, sortingType)
+//        Parser(dataType, sortingType)
+        Parser(dataType, sortingType, inputFile, outputFile)
     }
 }
 
@@ -32,7 +77,7 @@ class Parser {
     val lineStrategy = 1
     val wordStrategy = 2
     val longStrategy = 3
-    val intStragegy = 4
+    val intStrategy = 4
     val preparedString1: String
     val preparedString2: String = "Sorted data: "
 
@@ -42,8 +87,15 @@ class Parser {
     var elements: Array<String> = emptyArray<String>()
     var sortedElements: Array<String> = emptyArray<String>()
 
-    constructor(dataType: String, sortingType: String) {
+    var inputFile: String = ""
+    var outputFile: String = ""
+
+//    constructor(dataType: String, sortingType: String) {
+
+    constructor(dataType: String, sortingType: String, _inputFile: String, _outputFile: String) {
         sort = if (sortingType == "byCount") false else true
+
+        if (_outputFile != "") outputFile = _outputFile
         when (dataType) {
             "line" -> {
                 type = lineStrategy
@@ -54,7 +106,7 @@ class Parser {
                 preparedString1 = "Total numbers: "
             }
             "int" -> {
-                type = intStragegy
+                type = intStrategy
                 preparedString1 = "Total numbers: "
             }
             else -> {   // "word"
@@ -62,16 +114,33 @@ class Parser {
                 preparedString1 = "Total words: "
             }
         }
-        readInput()
+        if (_inputFile != "") {
+            inputFile = _inputFile
+            readInputFile(inputFile)
+        } else readInput()
         eliminateEmptyElements()
         _X_size = elements.size
         bubleNaturalSort()
-        output()
+
+        if (_outputFile != "") {
+            outputFile = _outputFile
+            outputInFile(outputFile)
+        } else output()
+    }
+
+
+
+    private fun readInputFile(inputFile: String) {
+        val file = File(inputFile)
+        var text = file.readText()
+        if (type != lineStrategy) text += " "
+        stringToStringArray(text)
     }
 
     fun readInput(){
-        val space = " " // без пробелав в конце может последнее число или word не прочитать
-        val inputString: String = if (test) {
+        val space = " " // без пробелов в конце может последнее число или word не прочитать
+        val inputString: String = if
+                (test) {
                         "1 -2   333 4\n" +
                         "42\n" +
                         "1                 1" + space
@@ -90,6 +159,7 @@ class Parser {
 
     private fun stringToStringArray(inputString: String){
         var num: String = ""
+        var skippedString: String = ""
         when (type) {
             lineStrategy -> {
                 var str = inputString.split("\n")
@@ -98,11 +168,17 @@ class Parser {
                 }
             }
             longStrategy,
-            intStragegy -> {
+            intStrategy -> {
                 for (i in 0 until inputString.length) {
                     if (inputString[i].isDigit() || inputString[i] == '-' || inputString[i] == '_') {
                         num += inputString[i]
+                        if (skippedString.length > 0) {
+                            println("\"$skippedString\" is not a long. It will be skipped.")
+                            skippedString = ""
+                        }
                     } else {
+                        if (inputString[i] != ' ' && inputString[i] != '\n')
+                            skippedString += inputString[i]
                         data += num
                         num = ""
                         continue
@@ -154,26 +230,27 @@ class Parser {
     }
 
     private fun compareStringsNatural(i: Int, j: Int) {
-        var iLength = sortedElements[i].length
-        var jLength = sortedElements[j].length
+        var descendSort = false
+
         var chrI = 0
         var chrJ = 0
-
-        if (sortedElements[i].first() == '-') chrI++
-        if (sortedElements[j].first() == '-') chrJ++
-        if (chrI > chrJ) return
+        if (sortedElements[i].first() == '-')
+            chrI++
+        if (sortedElements[j].first() == '-')
+            chrJ++
+        if (chrI > chrJ)
+            return
         if (chrI < chrJ) {
             swap(i, j, sortedElements)
             return
         }
-
-        var descendSort = false
-        if (chrI == 1 && chrJ == 1) {
+        if (chrI == 1 && chrJ == 1)
             descendSort = true
-        }
 
-        var minLength = Math.min(iLength, jLength)
-        var ch = chrI
+        val iLength = sortedElements[i].length
+        val jLength = sortedElements[j].length
+        val minLength = Math.min(iLength, jLength)
+        val ch = chrI
         for (k in ch until minLength) {
             if (sortedElements[i][k] == sortedElements[j][k]) continue
             if (sortedElements[i][ch] < sortedElements[j][ch] && descendSort) {
@@ -185,7 +262,8 @@ class Parser {
                 swap(i, j, sortedElements)
                 return
             }
-            if (sortedElements[i][k] > sortedElements[j][k]) return
+            if (sortedElements[i][k] > sortedElements[j][k])
+                return
         }
 
         // если в одной из строк частей больше и при этом
@@ -201,8 +279,6 @@ class Parser {
         array[a] = temp
     }
 
-    private fun greatestElement(): String = sortedElements[_X_size - 1]
-
     private fun count(string: String): String {
         var counter = 0
         for (i in 0 until _X_size) {
@@ -217,6 +293,17 @@ class Parser {
             print(preparedString2)
             println(printElements())
         } else println(printStatistics())
+    }
+
+    private fun outputInFile(outputFile: String) {
+        val file = File(outputFile)
+        var out = "${preparedString1}$_X_size."
+
+        if (sort) {
+            out += preparedString2
+            out += printElements()
+        } else out += printStatistics()
+        file.writeText(out)
     }
 
     private fun printElements(): String {
@@ -246,6 +333,7 @@ class Parser {
         }
 
         val list2 = sortByCount(list)
+
         for (i in 0 until list2.size) {
             out += list2[i][3]
         }
@@ -255,7 +343,7 @@ class Parser {
 
     private fun sortByCount(list: MutableList<List<String>>): MutableList<List<String>> {
         var min = 0
-        val array2: MutableList<List<String>> = mutableListOf<List<String>>()
+        val list3: MutableList<List<String>> = mutableListOf<List<String>>()
         var size: Int = list.size
         while (size != 0) {
             for (i in 1 until size) {
@@ -263,74 +351,71 @@ class Parser {
                     min = i
                 }
             }
-            array2 += list[min]
+            list3 += list[min]
             list.removeAt(min)
             min = 0
             size--
         }
 
-        size = array2.size
+        return eliminateDuplicateElements(list3)
+    }
+
+    private fun eliminateDuplicateElements(list3: MutableList<List<String>>): MutableList<List<String>> {
+        val list4: MutableList<List<String>> = mutableListOf<List<String>>()
+        var size = list3.size
         var a: String = ""
         var c: Int = 0
         while (size != 0) {
-            a = array2[0][2]
-            c = array2[0][1].toInt()
+            a = list3[0][2]
+            c = list3[0][1].toInt()
             while (c != 1) {
-                if (array2[1][2] == a) {
-                    array2.removeAt(1)
-                    c--
+                if (list3[1][2] == a) {
+                    list3.removeAt(1)
                     size--
+                    c--
                 }
             }
-            list += array2[0]
-            array2.removeAt(0)
-
+            list4 += list3[0]
+            list3.removeAt(0)
             size--
         }
-
-        return list
-    }
-
-    private fun swap2(a: Int, b: Int, array: MutableList<List<String>>) {
-        val temp = array[b]
-        array[b] = array[a]
-        array[a] = temp
+        return list4
     }
 }
 
 fun test(){
-
+/*
     println("long natural\n============")
-    Parser("long", "natural")
+    Parser("long", "natural", inputFile, outputFile)
     println("============\n")
 
     println("int natural\n============")
-    Parser("int", "natural")
+    Parser("int", "natural", inputFile, outputFile)
     println("============\n")
 
     println("word natural\n============")
-    Parser("word", "natural")
+    Parser("word", "natural", inputFile, outputFile)
     println("============\n")
 
     println("line natural\n============")
-    Parser("line", "natural")
+    Parser("line", "natural", inputFile, outputFile)
     println("============\n")
 
 
 
     println("long byCount\n============")
-    Parser("long", "byCount")
+    Parser("long", "byCount", inputFile, outputFile)
     println("============\n")
 
     println("int byCount\n============")
-    Parser("int", "byCount")
+    Parser("int", "byCount", inputFile, outputFile)
     println("============\n")
 
     println("word byCount\n============")
-    Parser("word", "byCount")
+    Parser("word", "byCount", inputFile, outputFile)
     println("============\n")
 
     println("line byCount\n============")
-    Parser("line", "byCount")
-    println("============\n")
+    Parser("line", "byCount", inputFile, outputFile)
+    println("============\n")*/
 }
